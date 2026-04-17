@@ -12,9 +12,7 @@ from PIL import Image
 from scipy.ndimage import gaussian_filter
 import gradio as gr
 
-# ==========================================
 # 1. KIẾN TRÚC MẠNG VÀ HÀM SUY LUẬN
-# ==========================================
 class ViTCoreExtractor(nn.Module):
     def __init__(self):
         super().__init__()
@@ -60,14 +58,12 @@ def calculate_anomaly_scores_full(test_features, memory_bank_index, k=9):
     
     return image_scores, patch_scores
 
-# ==========================================
 # 2. HÀM XỬ LÝ LÕI CHO GIAO DIỆN WEB
-# ==========================================
 def process_image(input_img, category):
     if input_img is None:
-        return None, None, "⚠️ Vui lòng tải lên một bức ảnh."
+        return None, None, "Vui lòng tải lên một bức ảnh."
 
-    # 🟢 SỬA LỖI ĐƯỜNG DẪN: Lấy thư mục gốc chứa file app.py này
+    # SỬA LỖI ĐƯỜNG DẪN: Lấy thư mục gốc chứa file app.py
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Ghép nối đường dẫn tuyệt đối một cách an toàn
@@ -77,9 +73,9 @@ def process_image(input_img, category):
 
     # Kiểm tra khắt khe xem file có tồn tại không
     if not os.path.exists(model_path) or not os.path.exists(index_path):
-        return None, None, f"❌ LỖI: Không tìm thấy Model hoặc Index tại thư mục: {os.path.join(base_dir, category)}"
+        return None, None, f"LỖI: Không tìm thấy Model hoặc Index tại thư mục: {os.path.join(base_dir, category)}"
 
-    # 🟢 ĐỌC NGƯỠNG (THRESHOLD)
+    # ĐỌC NGƯỠNG (THRESHOLD)
     best_threshold = 200.0 # Giá trị mặc định
     if os.path.exists(metrics_path):
         with open(metrics_path, 'r') as f:
@@ -96,10 +92,10 @@ def process_image(input_img, category):
     # Load FAISS Index
     index = faiss.read_index(index_path)
 
-    # 🟢 SỬA LỖI ĐỒNG BỘ TIỀN XỬ LÝ ẢNH
+    # SỬA LỖI ĐỒNG BỘ TIỀN XỬ LÝ ẢNH
     original_img = Image.fromarray(input_img).convert('RGB')
     
-    # 1. Transform chuẩn đưa vào Model (Y hệt lúc Train trên Kaggle)
+    # 1. Transform chuẩn đưa vào Model
     transform = T.Compose([
         T.Resize((256, 256)), 
         T.CenterCrop((224, 224)),      
@@ -108,9 +104,9 @@ def process_image(input_img, category):
     ])
     input_tensor = transform(original_img).unsqueeze(0).to(device)
     
-    # 2. Xử lý ảnh hiển thị (Phải crop y hệt Tensor để Heatmap không bị lệch)
+    # 2. Xử lý ảnh hiển thị
     display_img = original_img.resize((256, 256), Image.Resampling.BILINEAR)
-    # Cắt chuẩn xác 224x224 từ tâm (giống T.CenterCrop)
+    # Cắt chuẩn xác 224x224 từ tâm
     w, h = display_img.size
     left, top = (w - 224) / 2, (h - 224) / 2
     right, bottom = (w + 224) / 2, (h + 224) / 2
@@ -123,7 +119,7 @@ def process_image(input_img, category):
     
     img_score = float(img_scores[0])
 
-    # 🟢 SỬA LỖI HEATMAP NHÒE
+    # SỬA LỖI HEATMAP NHÒE
     score_map = cv2.resize(patch_scores[0], (224, 224), interpolation=cv2.INTER_LINEAR)
     score_map = gaussian_filter(score_map, sigma=2) # Đã giảm sigma xuống 2
     
@@ -141,15 +137,13 @@ def process_image(input_img, category):
         
     result_text = (
         f"{status}\n"
-        f"• Điểm phân tích: {img_score:.2f}\n"
-        f"• Ngưỡng an toàn: {best_threshold:.2f}"
+        f"Điểm phân tích: {img_score:.2f}\n"
+        f"Ngưỡng an toàn: {best_threshold:.2f}"
     )
 
     return blended, heatmap, result_text
 
-# ==========================================
 # 3. THIẾT KẾ GIAO DIỆN GRADIO
-# ==========================================
 # Hãy thêm các danh mục bạn đã tải về máy vào danh sách này
 MVTEC_CATEGORIES = [
     'toothbrush', 'zipper', 'bottle', 'capsule', 'hazelnut' 
@@ -158,7 +152,7 @@ MVTEC_CATEGORIES = [
 with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue")) as app:
     gr.Markdown(
         """
-        # 🚀 Hệ thống Phân tích Lỗi Bề mặt Công nghiệp (RealNet-SIA)
+        #Hệ thống Phân tích Lỗi Bề mặt Công nghiệp (RealNet-SIA)
         *Tự động quét khuyết tật bằng Swin Transformer & FAISS Memory Bank.*
         """
     )
