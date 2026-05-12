@@ -26,7 +26,7 @@ The main idea referenced from the paper is the use of a **Transformer-based feat
 
 - **MVTec AD official dataset:** https://www.mvtec.com/research-teaching/datasets/mvtec-ad
 - **Kaggle mirror used for experimentation:** https://www.kaggle.com/datasets/ipythonx/mvtec-ad
-- **Hugging Face dataset mirror:** https://huggingface.co/datasets/Voxel51/mvtec-ad
+- **Hugging Face:** https://huggingface.co/Manh2005/base-version/tree/main
 
 The MVTec AD dataset contains multiple industrial object and texture categories. Each category follows a structure similar to:
 
@@ -340,7 +340,7 @@ Example:
     "Image_AUROC": 0.9972,
     "Pixel_AUROC": 0.9884,
     "FPS": 1.78,
-    "Best_Threshold": 30.0
+    "Best_Threshold": 25.0
 }
 ```
 
@@ -350,17 +350,17 @@ The `update_thresholds_local.py` script writes category-specific thresholds into
 
 ```python
 CATEGORY_THRESHOLDS = {
-    "carpet": 35.0,
-    "grid": 30.0,
-    "leather": 30.0,
-    "tile": 35.0,
-    "wood": 35.0,
-    "bottle": 25.0,
-    "cable": 35.0,
-    "capsule": 35.0,
-    "hazelnut": 30.0,
-    "toothbrush": 30.0,
-    "zipper": 35.0,
+    "carpet": 14.0,
+    "grid": 18.0,
+    "leather": 20.0,
+    "tile": 19.0,
+    "wood": 20.0,
+    "bottle": 24.0,
+    "cable": 20.0,
+    "capsule": 15.0,
+    "hazelnut": 22.0,
+    "toothbrush": 25.0,
+    "zipper": 20.0,
 }
 ```
 
@@ -391,8 +391,8 @@ Example:
 
 ```text
 toothbrush good score: 12–25
-toothbrush defect score: 40–70
-→ a reasonable threshold is around 30
+toothbrush defect score: 26-40
+→ a reasonable threshold is around 25
 ```
 
 A single global threshold should not be used for all categories because each product type has a different anomaly score distribution.
@@ -422,22 +422,6 @@ metrics_<category>.json
 ```
 
 These files must be generated after training on Kaggle or downloaded from the Hugging Face repository where the artifacts were uploaded.
-
-### 9.3. Feature Dimension Mismatch with FAISS
-
-When the local app used a two-block extractor while the FAISS index was created using a one-block extractor, FAISS raised the following error:
-
-```text
-AssertionError: assert d == self.d
-```
-
-The local `ViTCoreExtractor` was corrected to use the same one-block feature extraction strategy as the base version, making it compatible with the existing FAISS index.
-
-### 9.4. Threshold Too High
-
-A default threshold of 200 caused almost all images to be classified as normal. The system was updated to use `Best_Threshold` from each category's metrics file instead.
-
----
 
 ## 10. Recommended Project Structure
 
@@ -497,16 +481,6 @@ Category threshold: 30.00
 
 ---
 
-## 12. Current Limitations
-
-- Thresholds are currently manually adjusted for each category.
-- The local version has been tested on selected MVTec AD categories, not all 15 categories.
-- The model `.pth`, FAISS `.index`, and feature extractor in `app.py` must match exactly.
-- The heatmap is normalized per image, so a red area in a good image does not always indicate a real defect; the official decision is based on `image_score` compared with `Best_Threshold`.
-- The current system is a research and technical demo, not a complete industrial inspection product.
-
----
-
 ## 13. Future Improvements
 
 - Automatically compute thresholds from the `train/good` score distribution or a separate validation set.
@@ -519,25 +493,6 @@ Category threshold: 30.00
 
 ---
 
-## 14. Summary of Completed Work
-
-```text
-1. Studied the ViT-Core paper and the anomaly detection problem.
-2. Used the MVTec AD dataset on Kaggle.
-3. Fine-tuned a Swin Transformer model using Cut-Paste augmentation.
-4. Extracted normal features from train/good images.
-5. Built a FAISS Memory Bank for each category.
-6. Evaluated the system using Image AUROC, Pixel AUROC, and FPS.
-7. Saved model, index, and metrics as artifacts.
-8. Uploaded the artifacts to Hugging Face.
-9. Downloaded the artifacts to a local machine using download.py.
-10. Fixed app.py to match the local directory structure and feature extractor.
-11. Resolved the feature-dimension mismatch between the model and FAISS index.
-12. Added category-specific threshold handling.
-13. Ran a local Gradio demo for good/defective image inspection.
-```
-
----
 
 ## 15. Note
 
