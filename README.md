@@ -481,7 +481,7 @@ Category threshold: 30.00
 
 ---
 
-## 13. Future Improvements
+## 12. Future Improvements
 
 - Automatically compute thresholds from the `train/good` score distribution or a separate validation set.
 - Save optimal thresholds based on Youden's J statistic or F1-score.
@@ -494,6 +494,6 @@ Category threshold: 30.00
 ---
 
 
-## 15. Note
+## 13. Note
 
 This project is an experimental research and technical demonstration. For real industrial deployment, additional validation, robust threshold calibration, real production data testing, and inference optimization are required.
