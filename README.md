@@ -1,34 +1,34 @@
 # MVTec AD Anomaly Detection Demo – ViT-Core / Swin Transformer + FAISS
 
-## 1. Giới thiệu
+## 1. Overview
 
-Dự án này xây dựng hệ thống phát hiện lỗi bề mặt công nghiệp trên bộ dữ liệu **MVTec AD** theo hướng tham khảo mô hình **ViT-Core: Lightweight Anomaly Detection Model using Transformer-based Feature Extractor**. Quy trình được triển khai theo hai giai đoạn chính:
+This project implements an industrial surface defect detection system on the **MVTec AD** dataset, inspired by the paper **ViT-Core: Lightweight Anomaly Detection Model using Transformer-based Feature Extractor**. The workflow is divided into two main stages:
 
-1. **Huấn luyện và đánh giá trên Kaggle**: xử lý dữ liệu MVTec AD, fine-tune mô hình theo từng danh mục sản phẩm, xây dựng FAISS Memory Bank và lưu các artifact cần thiết.
-2. **Triển khai local trên máy cá nhân**: tải model/index/metrics từ Hugging Face về máy, chạy giao diện Gradio để kiểm thử ảnh đầu vào, hiển thị heatmap và kết luận sản phẩm **TỐT** hoặc **LỖI** theo ngưỡng riêng của từng category.
+1. **Training and evaluation on Kaggle**: processing the MVTec AD dataset, fine-tuning the model for each product category, building a FAISS Memory Bank, and saving the required artifacts.
+2. **Local deployment on a personal computer**: downloading the trained model, FAISS index, and metrics from Hugging Face, running a Gradio interface, testing input images, visualizing heatmaps, and classifying products as **GOOD** or **DEFECTIVE** using category-specific thresholds.
 
-Dự án tập trung vào bài toán **industrial anomaly detection**, trong đó mô hình học đặc trưng của ảnh bình thường và phát hiện các vùng có biểu hiện khác biệt so với phân bố bình thường.
+The project focuses on **industrial anomaly detection**, where the model learns the feature distribution of normal images and detects regions that deviate from normal patterns.
 
 ---
 
-## 2. Tài liệu tham khảo và dữ liệu
+## 2. References and Dataset
 
-### 2.1. Bài báo tham khảo
+### 2.1. Reference Paper
 
-- **ViT-Core: Lightweight Anomaly Detection Model using Transformer-based Feature Extractor**
-- IEEE Access, 2025
-- DOI: https://doi.org/10.1109/ACCESS.2025.3618462
-- Trang tham khảo: https://www.researchgate.net/publication/396267323_ViT-Core_Lightweight_Anomaly_Detection_Model_using_Transformer-based_Feature_Extractor
+- **Title:** ViT-Core: Lightweight Anomaly Detection Model using Transformer-based Feature Extractor
+- **Publication:** IEEE Access, 2025
+- **DOI:** https://doi.org/10.1109/ACCESS.2025.3618462
+- **Reference page:** https://www.researchgate.net/publication/396267323_ViT-Core_Lightweight_Anomaly_Detection_Model_using_Transformer-based_Feature_Extractor
 
-Ý tưởng chính được tham khảo từ bài báo là sử dụng **Transformer-based feature extractor**, cụ thể là hướng dùng **Swin Transformer** để trích xuất đặc trưng thay cho backbone CNN truyền thống, từ đó xây dựng biểu diễn đặc trưng hiệu quả hơn cho bài toán anomaly detection.
+The main idea referenced from the paper is the use of a **Transformer-based feature extractor**, particularly a Swin Transformer-style backbone, for extracting visual representations in anomaly detection tasks. Instead of relying only on traditional CNN-based features, the project explores Transformer-based feature extraction combined with a memory-bank-based anomaly scoring approach.
 
-### 2.2. Bộ dữ liệu
+### 2.2. Dataset
 
-- MVTec AD official dataset: https://www.mvtec.com/research-teaching/datasets/mvtec-ad
-- Kaggle mirror sử dụng trong quá trình thực nghiệm: https://www.kaggle.com/datasets/ipythonx/mvtec-ad
-- Hugging Face dataset mirror: https://huggingface.co/datasets/Voxel51/mvtec-ad
+- **MVTec AD official dataset:** https://www.mvtec.com/research-teaching/datasets/mvtec-ad
+- **Kaggle mirror used for experimentation:** https://www.kaggle.com/datasets/ipythonx/mvtec-ad
+- **Hugging Face dataset mirror:** https://huggingface.co/datasets/Voxel51/mvtec-ad
 
-MVTec AD gồm nhiều nhóm sản phẩm và bề mặt công nghiệp, mỗi category có cấu trúc dữ liệu gồm:
+The MVTec AD dataset contains multiple industrial object and texture categories. Each category follows a structure similar to:
 
 ```text
 <category>/
@@ -41,13 +41,13 @@ MVTec AD gồm nhiều nhóm sản phẩm và bề mặt công nghiệp, mỗi c
     └── <defect_type>/
 ```
 
-Trong dự án này, tập `train/good` được dùng để xây dựng biểu diễn bình thường, còn tập `test/good` và `test/<defect_type>` được dùng để kiểm tra khả năng phân loại ảnh tốt/lỗi và trực quan hóa vùng bất thường.
+In this project, `train/good` images are used to build the normal feature representation, while `test/good` and `test/<defect_type>` images are used for evaluating image-level classification and visualizing anomalous regions.
 
 ---
 
-## 3. Các category đã triển khai
+## 3. Implemented Categories
 
-Phiên bản local hiện tập trung vào các category sau:
+The current local demo focuses on the following MVTec AD categories:
 
 ```text
 carpet
@@ -63,7 +63,7 @@ toothbrush
 zipper
 ```
 
-Mỗi category cần có bộ ba artifact riêng:
+Each category requires three artifact files:
 
 ```text
 vit_core_swin_<category>.pth
@@ -71,7 +71,7 @@ memory_bank_<category>.index
 metrics_<category>.json
 ```
 
-Ví dụ với `toothbrush`:
+For example, for the `toothbrush` category:
 
 ```text
 mvtec_anomaly_detection/
@@ -83,17 +83,17 @@ mvtec_anomaly_detection/
 
 ---
 
-## 4. Những gì đã thực hiện trên Kaggle
+## 4. Work Completed on Kaggle
 
-### 4.1. Chuẩn bị dữ liệu
+### 4.1. Dataset Preparation
 
-Dữ liệu MVTec AD được đưa vào môi trường Kaggle theo đường dẫn dạng:
+The MVTec AD dataset was used in the Kaggle environment through a path similar to:
 
 ```text
 /kaggle/input/datasets/ipythonx/mvtec-ad
 ```
 
-Notebook huấn luyện đọc dữ liệu theo từng category, ví dụ:
+The training notebook reads data category by category, for example:
 
 ```text
 /kaggle/input/datasets/ipythonx/mvtec-ad/toothbrush/train/good
@@ -101,64 +101,64 @@ Notebook huấn luyện đọc dữ liệu theo từng category, ví dụ:
 /kaggle/input/datasets/ipythonx/mvtec-ad/toothbrush/test/defective
 ```
 
-### 4.2. Fine-tune mô hình bằng Cut-Paste
+### 4.2. Fine-tuning with Cut-Paste Augmentation
 
-Mô hình được fine-tune theo hướng tự giám sát bằng kỹ thuật **Cut-Paste augmentation**. Ảnh lỗi giả được tạo từ ảnh bình thường bằng cách cắt một vùng ảnh rồi dán sang vị trí khác. Cách làm này giúp mô hình học được sự khác biệt giữa ảnh bình thường và ảnh bất thường mà không cần dùng nhãn lỗi thật trong quá trình huấn luyện.
+The model was fine-tuned using a self-supervised strategy based on **Cut-Paste augmentation**. Synthetic anomalous images were created by cutting a region from a normal image and pasting it into another location. This allows the model to learn differences between normal and abnormal patterns without requiring real defect labels during training.
 
-Quy trình cho từng category:
+The overall pipeline for each category is:
 
 ```text
-Ảnh train/good
-→ tạo ảnh lỗi giả bằng Cut-Paste
-→ fine-tune backbone Swin Transformer
-→ trích xuất đặc trưng
-→ xây dựng FAISS Memory Bank
-→ đánh giá trên test/good và test/defect
+train/good images
+→ generate synthetic defects using Cut-Paste
+→ fine-tune the Swin Transformer backbone
+→ extract visual features
+→ build a FAISS Memory Bank
+→ evaluate on test/good and test/defect images
 ```
 
-### 4.3. Feature extractor
+### 4.3. Feature Extractor
 
-Mô hình sử dụng backbone:
+The model uses the following backbone:
 
 ```python
 swin_base_patch4_window7_224
 ```
 
-Trong phiên bản local đang sử dụng, extractor lấy đặc trưng từ block:
+In the current local version, the feature extractor uses the following block:
 
 ```python
 self.backbone.layers[2].blocks[3]
 ```
 
-Đặc trưng đầu ra được đưa về dạng:
+The extracted feature map is converted into the format:
 
 ```text
 B, C, H, W
 ```
 
-sau đó tách thành các patch feature để so sánh với FAISS Memory Bank.
+Then the feature map is reshaped into patch-level feature vectors and compared against the FAISS Memory Bank.
 
-### 4.4. Xây dựng FAISS Memory Bank
+### 4.4. FAISS Memory Bank Construction
 
-Sau khi fine-tune, mô hình trích xuất đặc trưng từ ảnh `train/good`. Các đặc trưng này được đưa vào FAISS index để tạo Memory Bank cho từng category.
+After fine-tuning, features are extracted from the `train/good` images. These normal features are stored in a FAISS index, which acts as the Memory Bank for the corresponding category.
 
-Khi inference, ảnh mới được trích xuất feature, sau đó so sánh khoảng cách với các vector bình thường trong FAISS Memory Bank. Điểm bất thường càng cao thì ảnh càng có khả năng là ảnh lỗi.
+During inference, a new image is passed through the feature extractor. Its patch-level features are compared with the normal feature vectors in the FAISS Memory Bank. A higher distance indicates a higher anomaly score.
 
-### 4.5. Đánh giá mô hình
+### 4.5. Model Evaluation
 
-Trên Kaggle, mô hình được đánh giá bằng các chỉ số:
+On Kaggle, the model was evaluated using the following metrics:
 
 ```text
-Image AUROC: đánh giá phân loại ảnh tốt/lỗi
-Pixel AUROC: đánh giá khả năng khoanh vùng lỗi
-FPS: tốc độ suy luận
+Image AUROC: image-level normal/defective classification performance
+Pixel AUROC: pixel-level anomaly localization performance
+FPS: inference speed
 ```
 
-Kết quả huấn luyện cho thấy các category như `carpet`, `leather`, `bottle`, `toothbrush` đạt Image AUROC cao, chứng tỏ mô hình có khả năng phân biệt ảnh tốt và ảnh lỗi tương đối tốt trên bộ MVTec AD.
+The experimental results showed that several categories such as `carpet`, `leather`, `bottle`, and `toothbrush` achieved high Image AUROC scores, indicating that the model can distinguish normal and defective images relatively well on MVTec AD.
 
-### 4.6. Lưu artifact sau huấn luyện
+### 4.6. Saving Training Artifacts
 
-Với mỗi category, sau khi huấn luyện và đánh giá, hệ thống lưu ra 3 file:
+After training and evaluation, three files were saved for each category:
 
 ```text
 vit_core_swin_<category>.pth
@@ -166,13 +166,13 @@ memory_bank_<category>.index
 metrics_<category>.json
 ```
 
-Trong đó:
+Their meanings are:
 
-- `.pth`: trọng số mô hình sau khi fine-tune.
-- `.index`: FAISS Memory Bank chứa feature của ảnh bình thường.
-- `.json`: lưu thông tin đánh giá và ngưỡng phân loại của category.
+- `.pth`: fine-tuned model weights.
+- `.index`: FAISS Memory Bank built from normal image features.
+- `.json`: evaluation metrics and the category-specific classification threshold.
 
-Các file này được upload lên Hugging Face repo:
+These artifacts were uploaded to the Hugging Face repository:
 
 ```text
 Manh2005/base-version
@@ -180,23 +180,23 @@ Manh2005/base-version
 
 ---
 
-## 5. Đưa mô hình từ Kaggle về local
+## 5. Moving the Model from Kaggle to Local Machine
 
-Sau khi có artifact trên Hugging Face, dự án được đưa về chạy trên máy cá nhân theo quy trình:
+After the artifacts were uploaded to Hugging Face, the project was moved to a local computer using the following workflow:
 
 ```text
-Hugging Face repo
-→ download.py tải model/index/metrics về local
-→ app.py load model theo category
-→ Gradio nhận ảnh đầu vào
-→ mô hình tính anomaly score
-→ so sánh với threshold riêng
-→ hiển thị kết quả và heatmap
+Hugging Face repository
+→ download.py downloads model/index/metrics to local storage
+→ app.py loads the model by category
+→ Gradio receives an input image
+→ the model computes the anomaly score
+→ the score is compared with the category-specific threshold
+→ the system displays the result and heatmap
 ```
 
-### 5.1. Tải artifact về local
+### 5.1. Downloading Artifacts Locally
 
-File `download.py` dùng `snapshot_download` để tải toàn bộ repo về thư mục local:
+The `download.py` file uses `snapshot_download` to download the complete Hugging Face repository:
 
 ```python
 from huggingface_hub import snapshot_download
@@ -212,7 +212,7 @@ snapshot_download(
 )
 ```
 
-Sau khi tải xong, cần kiểm tra cấu trúc thư mục local:
+After downloading, the local directory should follow this structure:
 
 ```text
 E:\dataScience\Year_3_Documents\Project_NCKH\NCKH
@@ -230,7 +230,7 @@ E:\dataScience\Year_3_Documents\Project_NCKH\NCKH
     └── zipper
 ```
 
-Trong mỗi category cần có đủ:
+Each category folder must contain:
 
 ```text
 vit_core_swin_<category>.pth
@@ -240,100 +240,100 @@ metrics_<category>.json
 
 ---
 
-## 6. Chạy demo local bằng Gradio
+## 6. Running the Local Gradio Demo
 
-### 6.1. Cài đặt thư viện
+### 6.1. Installing Dependencies
 
-Khuyến nghị tạo môi trường ảo trước khi chạy:
+It is recommended to create a virtual environment:
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
-Cài các thư viện cần thiết:
+Install the required packages:
 
 ```bash
 pip install torch torchvision timm faiss-cpu opencv-python pillow scipy gradio huggingface_hub numpy
 ```
 
-Nếu máy có GPU NVIDIA, nên cài PyTorch theo đúng phiên bản CUDA từ trang chính thức của PyTorch.
+If the machine has an NVIDIA GPU, install the appropriate CUDA-enabled PyTorch version from the official PyTorch website.
 
-### 6.2. Chạy app
+### 6.2. Launching the App
 
-Sau khi đã tải đủ model/index/metrics, chạy:
+After downloading all required model, index, and metrics files, run:
 
 ```bash
 python app.py
 ```
 
-hoặc nếu dùng bản đã sửa:
+or, if using the corrected version:
 
 ```bash
 python app_fixed.py
 ```
 
-Gradio sẽ mở giao diện local tại địa chỉ dạng:
+Gradio will start a local interface, usually at:
 
 ```text
 http://127.0.0.1:7860
 ```
 
-Trên giao diện, người dùng chọn category, tải ảnh cần kiểm tra, sau đó nhấn **KIỂM TRA LỖI**.
+On the interface, the user selects a category, uploads an image, and clicks **KIỂM TRA LỖI** to run the inspection.
 
 ---
 
-## 7. Logic inference trên local
+## 7. Local Inference Logic
 
-Quy trình inference trong `app.py` gồm các bước:
+The local inference process in `app.py` is:
 
 ```text
-Ảnh đầu vào
-→ Resize và CenterCrop về 224x224
-→ Normalize theo ImageNet mean/std
-→ Swin Transformer trích xuất feature
-→ So sánh feature với FAISS Memory Bank
-→ Tính anomaly score
-→ Resize score map thành heatmap
-→ So sánh image score với threshold riêng của category
-→ Trả kết luận TỐT hoặc LỖI
+Input image
+→ Resize and CenterCrop to 224x224
+→ Normalize using ImageNet mean/std
+→ Extract features using Swin Transformer
+→ Compare features with the FAISS Memory Bank
+→ Compute the anomaly score
+→ Resize the anomaly score map into a heatmap
+→ Compare the image score with the category-specific threshold
+→ Return GOOD or DEFECTIVE
 ```
 
-Quy tắc phân loại:
+The classification rule is:
 
 ```python
 if image_score > best_threshold:
-    status = "LỖI"
+    status = "DEFECTIVE"
 else:
-    status = "TỐT"
+    status = "GOOD"
 ```
 
-Tức là:
+In other words:
 
 ```text
-score <= threshold  → sản phẩm bình thường
-score > threshold   → phát hiện lỗi
+score <= threshold  → normal product
+score > threshold   → defective product
 ```
 
 ---
 
-## 8. Ngưỡng riêng theo từng category
+## 8. Category-Specific Thresholds
 
-Ban đầu app từng dùng ngưỡng mặc định:
+Initially, the app used a fixed fallback threshold:
 
 ```python
 best_threshold = 200.0
 ```
 
-Điều này gây ra vấn đề: điểm phân tích thực tế của ảnh chỉ khoảng vài chục, nên nếu threshold là 200 thì gần như mọi ảnh đều bị báo là **SẢN PHẨM BÌNH THƯỜNG**.
+This caused a major issue: actual anomaly scores were usually only a few dozen, so a threshold of 200 made almost every image appear as **normal**.
 
-Để khắc phục, dự án chuyển sang cơ chế **ngưỡng riêng theo category**. Mỗi category có một `Best_Threshold` riêng trong file:
+To fix this, the project uses **category-specific thresholds**. Each category has its own `Best_Threshold` stored in:
 
 ```text
 metrics_<category>.json
 ```
 
-Ví dụ:
+Example:
 
 ```json
 {
@@ -344,9 +344,9 @@ Ví dụ:
 }
 ```
 
-### 8.1. Cập nhật ngưỡng local
+### 8.1. Updating Local Thresholds
 
-File `update_thresholds_local.py` được dùng để ghi ngưỡng riêng vào từng file metrics:
+The `update_thresholds_local.py` script writes category-specific thresholds into each metrics file:
 
 ```python
 CATEGORY_THRESHOLDS = {
@@ -364,56 +364,56 @@ CATEGORY_THRESHOLDS = {
 }
 ```
 
-Chạy:
+Run:
 
 ```bash
 python update_thresholds_local.py
 ```
 
-Sau đó chạy lại app:
+Then restart the app:
 
 ```bash
 python app_fixed.py
 ```
 
-Lưu ý: cần restart app sau khi thay đổi threshold để tránh dùng lại cache cũ.
+The app must be restarted after changing thresholds to avoid using cached values.
 
-### 8.2. Cách chọn threshold
+### 8.2. Choosing Thresholds
 
-Ngưỡng nên được chọn dựa trên phân bố score thực tế của từng category:
+Thresholds should be chosen based on the actual score distribution of each category:
 
 ```text
-Nếu ảnh lỗi vẫn bị báo TỐT  → giảm threshold
-Nếu ảnh tốt bị báo LỖI      → tăng threshold
+If defective images are still classified as GOOD  → decrease the threshold
+If good images are classified as DEFECTIVE       → increase the threshold
 ```
 
-Ví dụ:
+Example:
 
 ```text
 toothbrush good score: 12–25
 toothbrush defect score: 40–70
-→ threshold hợp lý khoảng 30
+→ a reasonable threshold is around 30
 ```
 
-Không nên dùng một threshold chung cho mọi category vì mỗi loại sản phẩm có phân bố score khác nhau.
+A single global threshold should not be used for all categories because each product type has a different anomaly score distribution.
 
 ---
 
-## 9. Các lỗi đã xử lý khi chuyển từ Kaggle sang local
+## 9. Issues Fixed During Kaggle-to-Local Migration
 
-### 9.1. Sai đường dẫn model
+### 9.1. Incorrect Model Directory
 
-Ban đầu app tìm model trong thư mục chứa `app.py`, trong khi artifact thật nằm trong:
+At first, the app searched for the model in the same directory as `app.py`, while the actual artifacts were stored in:
 
 ```text
 E:\dataScience\Year_3_Documents\Project_NCKH\NCKH\mvtec_anomaly_detection
 ```
 
-Đã sửa `base_dir` để trỏ đến đúng thư mục chứa trực tiếp các category.
+The `base_dir` was corrected to point to the directory that directly contains the category folders.
 
-### 9.2. Không có file model/index/metrics
+### 9.2. Missing Model, Index, or Metrics Files
 
-Bộ dữ liệu MVTec AD không chứa sẵn các file:
+The MVTec AD dataset does not include:
 
 ```text
 vit_core_swin_<category>.pth
@@ -421,25 +421,25 @@ memory_bank_<category>.index
 metrics_<category>.json
 ```
 
-Các file này phải được tạo sau khi train trên Kaggle hoặc tải từ Hugging Face repo đã upload artifact.
+These files must be generated after training on Kaggle or downloaded from the Hugging Face repository where the artifacts were uploaded.
 
-### 9.3. Sai chiều feature với FAISS index
+### 9.3. Feature Dimension Mismatch with FAISS
 
-Khi app dùng extractor 2 block nhưng FAISS index được tạo từ extractor 1 block, FAISS báo lỗi:
+When the local app used a two-block extractor while the FAISS index was created using a one-block extractor, FAISS raised the following error:
 
 ```text
 AssertionError: assert d == self.d
 ```
 
-Đã sửa `ViTCoreExtractor` trong local app để dùng đúng extractor 1 block, khớp với FAISS index đã tạo từ bản base.
+The local `ViTCoreExtractor` was corrected to use the same one-block feature extraction strategy as the base version, making it compatible with the existing FAISS index.
 
-### 9.4. Threshold quá cao
+### 9.4. Threshold Too High
 
-Ngưỡng mặc định 200 làm mọi ảnh đều được báo là bình thường. Đã chuyển sang `Best_Threshold` riêng theo từng category trong file metrics.
+A default threshold of 200 caused almost all images to be classified as normal. The system was updated to use `Best_Threshold` from each category's metrics file instead.
 
 ---
 
-## 10. Cấu trúc project đề xuất
+## 10. Recommended Project Structure
 
 ```text
 NCKH/
@@ -469,74 +469,76 @@ NCKH/
 
 ---
 
-## 11. Kết quả đầu ra của demo
+## 11. Demo Output
 
-Khi người dùng tải ảnh lên giao diện, hệ thống trả về:
+When the user uploads an image, the system returns:
 
-1. Ảnh overlay giữa ảnh đầu vào và heatmap.
-2. Heatmap vùng nghi ngờ lỗi.
-3. Kết luận từ AI:
+1. An overlay image combining the original image and the heatmap.
+2. A heatmap showing suspected anomalous regions.
+3. An AI-generated inspection result.
+
+Example defective result:
 
 ```text
-🔴 PHÁT HIỆN LỖI KHUYẾT TẬT
-Danh mục: toothbrush
-Điểm phân tích: 45.82
-Ngưỡng của danh mục: 30.00
+🔴 DEFECT DETECTED
+Category: toothbrush
+Analysis score: 45.82
+Category threshold: 30.00
 ```
 
-hoặc:
+Example good result:
 
 ```text
-🟢 SẢN PHẨM BÌNH THƯỜNG
-Danh mục: toothbrush
-Điểm phân tích: 18.24
-Ngưỡng của danh mục: 30.00
-```
-
----
-
-## 12. Hạn chế hiện tại
-
-- Ngưỡng threshold hiện cần hiệu chỉnh thủ công theo từng category.
-- Phiên bản local mới thử nghiệm trên một số category thuộc MVTec AD, chưa mở rộng toàn bộ 15 category.
-- Kết quả phụ thuộc chặt chẽ vào việc model `.pth`, FAISS `.index` và extractor trong `app.py` phải khớp nhau.
-- Heatmap được normalize theo từng ảnh, do đó vùng đỏ trên ảnh tốt không nhất thiết là lỗi; kết luận chính thức dựa vào `image_score` so với `Best_Threshold`.
-- Mô hình hiện mới là demo nghiên cứu, chưa phải hệ thống kiểm định công nghiệp hoàn chỉnh.
-
----
-
-## 13. Hướng phát triển tiếp theo
-
-- Tự động tính threshold theo phân bố score của `train/good` hoặc tập validation riêng.
-- Lưu threshold tối ưu theo Youden’s J statistic hoặc F1-score trên tập test có nhãn.
-- Bổ sung đủ 15 category của MVTec AD.
-- Cho phép upload nhiều ảnh cùng lúc.
-- Xuất báo cáo kết quả kiểm tra theo file CSV.
-- Đóng gói thành ứng dụng desktop hoặc Docker container.
-- Tối ưu tốc độ inference cho CPU và GPU local.
-
----
-
-## 14. Tóm tắt quy trình thực hiện
-
-```text
-1. Nghiên cứu bài báo ViT-Core và bài toán anomaly detection.
-2. Sử dụng bộ dữ liệu MVTec AD trên Kaggle.
-3. Fine-tune mô hình Swin Transformer bằng Cut-Paste augmentation.
-4. Trích xuất đặc trưng ảnh bình thường từ train/good.
-5. Xây dựng FAISS Memory Bank cho từng category.
-6. Đánh giá bằng Image AUROC, Pixel AUROC và FPS.
-7. Lưu model, index, metrics thành artifact.
-8. Upload artifact lên Hugging Face.
-9. Tải artifact về local bằng download.py.
-10. Sửa app.py để khớp đường dẫn local và extractor.
-11. Sửa lỗi dimension mismatch giữa feature và FAISS index.
-12. Thêm cơ chế threshold riêng theo category.
-13. Chạy demo local bằng Gradio để kiểm tra ảnh tốt/lỗi.
+🟢 NORMAL PRODUCT
+Category: toothbrush
+Analysis score: 18.24
+Category threshold: 30.00
 ```
 
 ---
 
-## 15. Ghi chú
+## 12. Current Limitations
 
-Dự án này là bản thực nghiệm phục vụ nghiên cứu và demo kỹ thuật. Để sử dụng trong môi trường sản xuất thực tế, cần bổ sung quy trình kiểm định dữ liệu, hiệu chỉnh threshold ổn định hơn, đánh giá trên dữ liệu sản xuất thật và tối ưu độ trễ suy luận.
+- Thresholds are currently manually adjusted for each category.
+- The local version has been tested on selected MVTec AD categories, not all 15 categories.
+- The model `.pth`, FAISS `.index`, and feature extractor in `app.py` must match exactly.
+- The heatmap is normalized per image, so a red area in a good image does not always indicate a real defect; the official decision is based on `image_score` compared with `Best_Threshold`.
+- The current system is a research and technical demo, not a complete industrial inspection product.
+
+---
+
+## 13. Future Improvements
+
+- Automatically compute thresholds from the `train/good` score distribution or a separate validation set.
+- Save optimal thresholds based on Youden's J statistic or F1-score.
+- Add support for all 15 MVTec AD categories.
+- Support batch image upload and batch inspection.
+- Export inspection results to CSV.
+- Package the system as a desktop application or Docker container.
+- Optimize inference speed for both CPU and GPU deployment.
+
+---
+
+## 14. Summary of Completed Work
+
+```text
+1. Studied the ViT-Core paper and the anomaly detection problem.
+2. Used the MVTec AD dataset on Kaggle.
+3. Fine-tuned a Swin Transformer model using Cut-Paste augmentation.
+4. Extracted normal features from train/good images.
+5. Built a FAISS Memory Bank for each category.
+6. Evaluated the system using Image AUROC, Pixel AUROC, and FPS.
+7. Saved model, index, and metrics as artifacts.
+8. Uploaded the artifacts to Hugging Face.
+9. Downloaded the artifacts to a local machine using download.py.
+10. Fixed app.py to match the local directory structure and feature extractor.
+11. Resolved the feature-dimension mismatch between the model and FAISS index.
+12. Added category-specific threshold handling.
+13. Ran a local Gradio demo for good/defective image inspection.
+```
+
+---
+
+## 15. Note
+
+This project is an experimental research and technical demonstration. For real industrial deployment, additional validation, robust threshold calibration, real production data testing, and inference optimization are required.
